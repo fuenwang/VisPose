@@ -1,7 +1,6 @@
 from __future__ import print_function
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.dirname(__file__)) + '/..')
 import cv2
 import math
 import numpy as np
@@ -134,11 +133,15 @@ class Pose:
     def inv(self):
         tmp = Pose([0, 0, 0], [0, 0, 0])
         tmp.R = self.R.T
+        tmp.r = list(mat2euler(tmp.R)/np.pi * 180)
         tmp.T = np.dot(-self.R.T, self.T)
         return tmp
 
     def __call__(self, pt):
         return np.asarray(pt).dot(self.R.T) + self.T
+    
+    def __repr__(self):
+        return 'R: [%.2f %.2f %.2f], T: [%.2f %.2f %.2f]'%(self.r[0], self.r[1], self.r[2], self.T[0], self.T[1], self.T[2])
 
 
 def Sequence(lst):
@@ -149,6 +152,7 @@ def Sequence(lst):
         now = lst[i]
         tmp.R = np.dot(now.R, tmp.R)
         tmp.T = np.dot(now.R, tmp.T) + now.T
+    tmp.r = list(mat2euler(tmp.R)/np.pi * 180)
     return tmp
 
 
@@ -172,21 +176,3 @@ class PosePlt:
         for i in lst:
             pt = np.asarray(i.points())
             self.ax.plot(pt[:, 0], pt[:, 1], pt[:, 2])
-    
-fig = plt.figure(figsize=(7.2, 7.2), dpi=100)
-ax = fig.add_subplot(111, projection='3d')
-init(ax)
-lim = 15
-ax.set_xlim([-lim, lim])
-ax.set_ylim([-lim, lim])
-ax.set_zlim([-lim, lim])
-
-camplt = PosePlt(ax)
-
-p1 = Pose([0, 0, 0], [0, 0, 5])
-p2 = Sequence([p1, Pose([0, 45, 0], [0, 0, 5])])
-camplt.nplot([p1, p2])
-
-
-ax.view_init(elev=-90, azim=-90)
-plt.show()
